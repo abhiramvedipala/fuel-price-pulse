@@ -1,0 +1,21 @@
+name: fuelpulse
+version: "1.0.0"
+config-version: 2
+profile: fuelpulse
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+
+vars:
+  # Latest EIA week must be at most this old. CI on the frozen fixture overrides it.
+  max_staleness_days: 14
+
+models:
+  fuelpulse:
+    staging:
+      +materialized: view
+    intermediate:
+      +materialized: view
+    marts:
+      +materialized: table
