@@ -71,8 +71,13 @@ def fetch_xls(sid: str, http: requests.Session) -> pd.DataFrame:
 
 
 def fetch_api(sid: str, http: requests.Session, key: str) -> pd.DataFrame:
-    resp = http.get(API_URL.format(sid=sid), params={"api_key": key}, timeout=60)
-    resp.raise_for_status()
+    try:
+        resp = http.get(API_URL.format(sid=sid), params={"api_key": key}, timeout=60)
+        resp.raise_for_status()
+    except requests.RequestException as exc:
+        # The default message embeds the full URL, key included; keep it out of CI logs.
+        status = getattr(exc.response, "status_code", None)
+        raise RuntimeError(f"EIA API request failed for {sid} (status {status})") from None
     rows = resp.json()["response"]["data"]
     return pd.DataFrame({"week": [r["period"] for r in rows], "value": [r["value"] for r in rows]})
 
