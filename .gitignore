@@ -26,3 +26,4 @@ dist/
 # local working notes
 CLAUDE.md
 PROMPT.md
+dbt/.user.yml
