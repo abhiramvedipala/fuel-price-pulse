@@ -1,0 +1,19 @@
+version: 2
+
+sources:
+  - name: eia
+    description: Raw weekly EIA prices written by fuelpulse.ingest
+    schema: main
+    loaded_at_field: loaded_at
+    freshness:
+      warn_after: {count: 8, period: day}
+      error_after: {count: 15, period: day}
+    tables:
+      - name: raw_prices
+        columns:
+          - name: series_id
+            tests: [not_null]
+          - name: week
+            tests: [not_null]
+          - name: value
+            tests: [not_null]

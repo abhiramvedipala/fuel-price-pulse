@@ -6,11 +6,11 @@
 data/*.duckdb
 data/*.duckdb.wal
 data/raw/
-models/
+/models/
 dbt/target/
 dbt/logs/
 dbt/dbt_packages/
-logs/
+/logs/
 
 # python
 __pycache__/
