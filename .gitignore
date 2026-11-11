@@ -1,0 +1,28 @@
+# local tooling
+.claude/
+.env
+
+# data and model artifacts
+data/*.duckdb
+data/*.duckdb.wal
+data/raw/
+models/
+dbt/target/
+dbt/logs/
+dbt/dbt_packages/
+logs/
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+build/
+dist/
+.DS_Store
+
+# local working notes
+CLAUDE.md
+PROMPT.md
