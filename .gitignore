@@ -27,3 +27,4 @@ dist/
 CLAUDE.md
 PROMPT.md
 dbt/.user.yml
+.serena/
