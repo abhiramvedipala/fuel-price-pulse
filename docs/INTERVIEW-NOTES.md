@@ -61,3 +61,29 @@ Making "no future information" provable rather than claimed. Crude prices are da
 - `fuelpulse/features.py`, `tests/test_features.py` (leakage)
 - `fuelpulse/model.py` (baselines, conformal)
 - `fuelpulse/backtest.py`, `reports/backtest.md`
+
+## Phase 3: explanations and findings
+
+### What this phase built
+- `fuelpulse/explain.py`: exact SHAP (TreeExplainer) for the four horizon models, per-series driver ranking, and the worst backtest weeks.
+- `reports/shap_drivers.csv`, `reports/shap.md`, `docs/shap_summary.png`.
+- `docs/findings.md`: a one-page plain-English report for a gas-station owner.
+
+### Key decisions and "why not X?"
+- **Why SHAP and not feature importance?** Gain importance is biased toward high-cardinality features and has no sign. SHAP is additive in dollars per gallon, so "WTI contributes about 1.6 cents on average" is a meaningful sentence.
+- **Why trust a plain-English report?** Every figure in it comes from a script's output, and I deleted one sentence I could not back with a test.
+- **Why report that drivers are identical across regions?** Because they are. Regional differences exist in level, not in which signals matter, and inventing differences would mislead.
+
+### Hardest problem
+Deciding what the failures mean. The six worst weeks cluster in March 2026, when gasoline rose about $1.30 in four weeks and the model forecast almost none of it. Crude had also jumped, but a model trained mostly on moderate moves cannot extrapolate a regime like that. I wrote that down as a limitation instead of tuning the model on those weeks, which would have leaked the test window into training.
+
+### Likely questions
+1. **What drives prices in your model?** Last week's price change (mean |SHAP| 0.032 $/gal), the WTI level (0.016), then seasonality (0.015). The same ranking holds in all 12 series.
+2. **Does SHAP prove causation?** No. It describes what the model uses. Crude plausibly causes pump moves, but the momentum term also stands in for things the data does not contain, such as wholesale prices.
+3. **Where does the model fail?** Supply shocks: the four worst 4-week misses are March 2026, with errors of $0.79 to $1.25 per gallon, all in one direction (forecast too low).
+4. **How would you improve it?** Add daily wholesale (RBOB) prices, which lead retail by days; add volatility-scaled intervals; evaluate against a no-change baseline with a Diebold-Mariano test.
+5. **Who is the findings report for?** A station owner. It avoids model jargon, gives ranges instead of point values, and says plainly that past two weeks "no change" is competitive.
+
+### Files to open
+- `fuelpulse/explain.py`, `reports/shap.md`
+- `docs/findings.md`, `docs/shap_summary.png`
