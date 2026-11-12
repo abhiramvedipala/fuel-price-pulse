@@ -1,0 +1,48 @@
+name: Weekly refresh
+
+on:
+  schedule:
+    # EIA publishes weekly retail prices Monday afternoon US Eastern.
+    - cron: "0 15 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: weekly-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+          enable-cache: true
+      - run: uv sync --frozen
+      # The warehouse is not cached: each run rebuilds it from full EIA history.
+      - name: Ingest EIA prices
+        run: uv run python -m fuelpulse.ingest
+        env:
+          EIA_API_KEY: ${{ secrets.EIA_API_KEY }}
+      - name: dbt build (fails on any test failure)
+        run: uv run dbt build --project-dir dbt --profiles-dir dbt
+      - name: dbt source freshness
+        run: uv run dbt source freshness --project-dir dbt --profiles-dir dbt
+      - name: Forecast
+        run: uv run python -m fuelpulse.forecast
+      - name: Commit refreshed reports
+        run: |
+          git config user.name "fuelpulse-bot"
+          git config user.email "fuelpulse-bot@users.noreply.github.com"
+          git add reports/forecast.csv reports/history.parquet reports/run_log.json reports/run_log.md
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "chore(data): weekly forecast refresh for $(date -u +%Y-%m-%d)"
+          git push
