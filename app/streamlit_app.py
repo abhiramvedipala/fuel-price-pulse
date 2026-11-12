@@ -128,7 +128,11 @@ else:
     max_years = max(1, int((series["week"].max() - series["week"].min()).days // 365) + 1)
     years = st.slider("Years shown", 1, max_years, min(3, max_years))
     shown = series[series["week"] >= series["week"].max() - pd.DateOffset(years=years)]
-    st.line_chart(shown.set_index("week")[["price", "avg_4w"]], y_label="$ per gallon")
+    long = shown.melt("week", ["price", "avg_4w"], var_name="series", value_name="usd")
+    st.altair_chart(alt.Chart(long).mark_line().encode(
+        x=alt.X("week:T", title=None), y=alt.Y("usd:Q", title="$ per gallon",
+                                               scale=alt.Scale(zero=False)),
+        color=alt.Color("series:N", title=None)), use_container_width=True)
 
 # Forecast
 st.header("4-week forecast (80% interval)")
