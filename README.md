@@ -64,13 +64,14 @@ Every number comes from a script in this repo; the full file is [RESULTS.md](RES
 | Series ingested | 14 (12 retail, 2 crude), 8,664 rows, 2015-01-02 to 2026-11-09 | `uv run python -m fuelpulse.ingest` |
 | dbt data tests | 40, all passing | `uv run dbt build --project-dir dbt --profiles-dir dbt` |
 | Backtest window | 104 weekly origins, 2024-10-21 to 2026-10-12, 12 series, 4,992 forecasts | `uv run python -m fuelpulse.backtest` |
-| MAE, 1 / 2 / 3 / 4 weeks ($/gal) | LightGBM 0.071 / 0.128 / 0.177 / 0.223 | same |
-| MAE, last-value baseline | 0.076 / 0.129 / 0.173 / 0.211 | same |
-| MAE, seasonal-naive baseline | 0.087 / 0.148 / 0.199 / 0.247 | same |
-| 80% interval coverage | 71 / 68 / 67 / 67 percent (68.5% overall) | same |
+| MAE, 1 / 2 / 3 / 4 weeks ($/gal) | LightGBM 0.071 / 0.128 / 0.177 / 0.223 | `uv run python -m fuelpulse.backtest` |
+| MAE, last-value baseline | 0.076 / 0.129 / 0.173 / 0.211 | `uv run python -m fuelpulse.backtest` |
+| MAE, seasonal-naive baseline | 0.087 / 0.148 / 0.199 / 0.247 | `uv run python -m fuelpulse.backtest` |
+| MAE, all horizons combined | LightGBM 0.1496, last value 0.1473, seasonal naive 0.1702 | `uv run python -m fuelpulse.backtest` |
+| 80% interval coverage | 79.9 / 78.4 / 79.0 / 79.2 percent (79.1% overall); before the interval change 71 / 68 / 67 / 67 (68.5%) | `uv run python -m fuelpulse.backtest` |
 | Top SHAP drivers | last week's change (0.032), WTI level (0.016), seasonal term (0.015) | `uv run python -m fuelpulse.explain` |
 
-The model beats seasonal naive at every horizon and last value at 1 and 2 weeks, but loses to last value at 3 and 4 weeks (by 2% and 5%). The intervals are narrower than intended. I report both as measured.
+The model beats seasonal naive at every horizon and last value at 1 and 2 weeks, but loses to last value at 3 and 4 weeks (by 2% and 5%). **Across all horizons combined it is slightly worse than just repeating the last price** (MAE 0.1496 against 0.1473, about 1.5% higher). The gain is concentrated at one and two weeks. The intervals now cover 79.1% against an 80% target; the first version covered 68.5% and is kept in RESULTS.md as the "before" record. Wider bands are the price: the mean half-width is 0.12 to 0.34 $/gal, against 0.08 to 0.22 before.
 
 ## How it works
 **Point-in-time crude join.** EIA dates crude weeks on Friday and retail weeks on Monday. A dbt ASOF join gives each Monday the newest crude week that had already ended, so no feature sees a future price.
@@ -79,7 +80,7 @@ The model beats seasonal naive at every horizon and last value at 1 and 2 weeks,
 
 **Rolling-origin backtest.** For each of 104 weekly origins the model trains only on rows whose targets were already published, forecasts 1-4 weeks ahead and is scored once the truth arrives, refit every 4 weeks. Model choice (pooled vs per-series) and hyperparameters were picked on the 52 origins before that window.
 
-**Conformal intervals.** The 80% half-width is the 80th percentile of absolute errors on the last 52 weeks, from a model that never saw them.
+**Conformal intervals.** Errors on the last 104 weeks, from a model that never saw them, are divided by each series' trailing 13-week volatility. The 80th percentile of those scaled errors, times the volatility at the forecast origin, is the half-width, so bands widen when prices are moving. I picked this on the validation year after comparing six width schemes (`reports/model_experiments.md`).
 
 **Idempotent ingest.** Rows upsert by (series, week) and update only when the value changed, so a second run writes zero rows. The last 4 weeks are re-read each run to pick up EIA revisions.
 
@@ -94,12 +95,12 @@ pytest covers idempotent upserts and revisions, the `--since` watermark, leakage
 All 19 are in [DECISIONS.md](DECISIONS.md). The top three:
 1. **Change targets, not levels.** Avoids the tree-extrapolation cap; costs a little interpretability.
 2. **Report the loss.** The model is worse than "no change" at 3-4 weeks. I did not tune on the test window to hide it; the findings page tells owners to treat those weeks as a rough guide.
-3. **Conformal intervals over quantile models.** Simpler and cheaper, but they under-cover (68.5% vs 80%) when a shock is larger than anything in the calibration window.
+3. **Conformal intervals over quantile models.** Simpler and cheaper. Plain pooled bands under-covered (68.5% vs 80%) through the March 2026 shock; scaling by trailing volatility fixed most of that (79.1%) at the cost of wider bands on average.
 
 ## Known limits and next steps
 - Weekly regional averages only; not a forecast for a specific street.
 - One large shock (March 2026) dominates the worst misses; behaviour in other kinds of shock is untested.
-- Intervals under-cover. Next: volatility-scaled or adaptive conformal updates.
+- Bands are wider on average than before and still depend on volatility measured before a shock begins, so the first week of a sudden jump is under-covered. Next: adaptive conformal updates.
 - No wholesale (RBOB) prices, which lead retail by days. Adding them is the most likely accuracy gain.
 - Needs me: the GitHub repository and Streamlit Cloud deploy (steps below).
 
