@@ -2,8 +2,11 @@ name: Weekly refresh
 
 on:
   schedule:
-    # EIA publishes weekly retail prices Monday afternoon US Eastern.
-    - cron: "0 15 * * 1"
+    # EIA publishes weekly retail prices on Monday afternoon US Eastern, so run after
+    # 5 pm Eastern (22:00 UTC) and retry Tuesday morning for holiday or late releases.
+    # The commit step does nothing when the data has not changed.
+    - cron: "0 22 * * 1"
+    - cron: "0 14 * * 2"
   workflow_dispatch:
 
 permissions:
@@ -29,10 +32,12 @@ jobs:
         run: uv run python -m fuelpulse.ingest
         env:
           EIA_API_KEY: ${{ secrets.EIA_API_KEY }}
+      # dbt source freshness is not used here: the warehouse is rebuilt on every run, so
+      # loaded_at is always "now". This checks the newest EIA week and says why it fails.
+      - name: Check EIA data freshness
+        run: uv run python -m fuelpulse.freshness
       - name: dbt build (fails on any test failure)
         run: uv run dbt build --project-dir dbt --profiles-dir dbt
-      - name: dbt source freshness
-        run: uv run dbt source freshness --project-dir dbt --profiles-dir dbt
       - name: Forecast
         run: uv run python -m fuelpulse.forecast
       - name: Commit refreshed reports
@@ -44,5 +49,6 @@ jobs:
             echo "No changes to commit."
             exit 0
           fi
-          git commit -m "chore(data): weekly forecast refresh for $(date -u +%Y-%m-%d)"
+          week=$(python3 -c "import json; print(json.load(open('reports/run_log.json'))['latest_eia_week'])")
+          git commit -m "chore(data): weekly forecast refresh for EIA week $week"
           git push
