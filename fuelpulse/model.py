@@ -13,11 +13,20 @@ import lightgbm as lgb
 import numpy as np
 import pandas as pd
 
-from fuelpulse.features import BASE_FEATURES, FEATURES, HORIZON_FEATURES, HORIZONS, KEYS, design
+from fuelpulse.features import (
+    BASE_FEATURES,
+    FEATURES,
+    HELPERS,
+    HORIZON_FEATURES,
+    HORIZONS,
+    KEYS,
+    design,
+)
 
 NUMERIC = BASE_FEATURES + HORIZON_FEATURES
 COVERAGE = 0.80
-CALIB_WEEKS = 52
+CALIB_WEEKS = 104
+MIN_VOL = 0.01  # $/gal floor so a flat stretch cannot divide by ~zero
 
 # Small, heavily regularised trees with an L1 objective. Chosen on the
 # validation year only (see DECISIONS.md); weekly price changes are
@@ -59,20 +68,26 @@ class Fitted:
 
 def conformal_half_width(d: pd.DataFrame, origin: pd.Timestamp, coverage: float = COVERAGE,
                          calib_weeks: int = CALIB_WEEKS) -> float:
-    """Split conformal: fit on older data, measure errors on the most recent weeks.
+    """Volatility-scaled split conformal: returns a multiplier of recent volatility.
 
-    The calibration weeks are out of sample for the calibration model, so the
-    quantile of their absolute errors is an honest error bar for one horizon.
+    Fit on older data, then measure errors on the most recent weeks, which are
+    out of sample for that model. Each error is divided by the series' trailing
+    13-week volatility, so the band is wide when prices are moving and narrow
+    when they are calm. The forecast's half-width is this multiplier times the
+    volatility at the forecast origin. A 104-week window and this scaling were
+    chosen on the validation year (DECISIONS.md #25).
     """
     rows = trainable(d, origin)
+    rows = rows[rows["vol_13w"].notna()]
     n_weeks = rows["target_week"].nunique()
     calib_weeks = min(calib_weeks, n_weeks // 3)
     split = origin - pd.Timedelta(weeks=calib_weeks)
     older, recent = rows[rows["target_week"] <= split], rows[rows["target_week"] > split]
     resid = np.abs(recent["y"] - fit(older, FEATURES).predict(recent[FEATURES]))
-    n = len(resid)
+    scaled = resid / recent["vol_13w"].clip(lower=MIN_VOL)
+    n = len(scaled)
     level = min(1.0, np.ceil((n + 1) * coverage) / n)  # finite-sample correction
-    return float(np.quantile(resid, level))
+    return float(np.quantile(scaled, level))
 
 
 def fit_all(designs: dict[int, pd.DataFrame], origin: pd.Timestamp, mode: str = "pooled",
@@ -96,7 +111,7 @@ def forecast(fitted: Fitted, designs: dict[int, pd.DataFrame], origin: pd.Timest
     frames = []
     for h in HORIZONS:
         d = designs[h]
-        rows = d[(d["week"] == origin) & d[NUMERIC].notna().all(axis=1)]
+        rows = d[(d["week"] == origin) & d[NUMERIC + HELPERS].notna().all(axis=1)]
         out = rows[KEYS + ["week", "target_week", "price"]].rename(
             columns={"week": "origin", "price": "origin_price"})
         out["horizon"] = h
@@ -104,7 +119,7 @@ def forecast(fitted: Fitted, designs: dict[int, pd.DataFrame], origin: pd.Timest
         out["pred_model"] = rows["price"] + fitted.predict_change(rows, h)
         out["pred_last_value"] = rows["price"]
         out["pred_seasonal_naive"] = rows["price"] + rows["seasonal_chg"]
-        width = fitted.half_width.get(h, np.nan)
+        width = fitted.half_width.get(h, np.nan) * rows["vol_13w"].clip(lower=MIN_VOL)
         out["lo"], out["hi"] = out["pred_model"] - width, out["pred_model"] + width
         frames.append(out)
     return pd.concat(frames, ignore_index=True)

@@ -88,8 +88,12 @@ def pick(df: pd.DataFrame | None, region: str, product: str) -> pd.DataFrame | N
 st.set_page_config(page_title="Fuel Price Pulse", layout="wide")
 
 with st.sidebar:
-    region = st.selectbox("Region", REGIONS)
-    product = st.selectbox("Fuel", PRODUCTS)
+    # ?region=PADD5&fuel=diesel opens a specific series (used for screenshots and links)
+    qp = st.query_params
+    region = st.selectbox("Region", REGIONS, index=REGIONS.index(qp["region"])
+                          if qp.get("region") in REGIONS else 0)
+    product = st.selectbox("Fuel", PRODUCTS, index=PRODUCTS.index(qp["fuel"])
+                           if qp.get("fuel") in PRODUCTS else 0)
 
 history = load_history(str(DB), str(REPORTS / "history.parquet"))
 if history is not None:

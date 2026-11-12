@@ -28,6 +28,8 @@ BASE_FEATURES = [
 ]
 HORIZON_FEATURES = ["seasonal_chg", "target_woy_sin", "target_woy_cos", "target_holiday"]
 CATEGORICAL = ["region", "product"]
+# Backward-looking helpers that are not model inputs: vol_13w scales the intervals.
+HELPERS = ["vol_13w"]
 FEATURES = BASE_FEATURES + HORIZON_FEATURES + CATEGORICAL
 
 
@@ -77,6 +79,7 @@ def build_features(panel: pd.DataFrame) -> pd.DataFrame:
     df["spread"] = df["price"] - df["wti"] / GALLONS_PER_BARREL
     spread_mean = df.groupby(KEYS, sort=False)["spread"].transform(lambda s: s.rolling(26).mean())
     df["spread_dev_26w"] = df["spread"] - spread_mean
+    df["vol_13w"] = g["chg_1w"].transform(lambda s: s.rolling(13).std())
     for col in CATEGORICAL:
         df[col] = df[col].astype("category")
     return df

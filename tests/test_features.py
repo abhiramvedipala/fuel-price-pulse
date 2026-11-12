@@ -6,6 +6,7 @@ import pytest
 
 from fuelpulse.features import (
     BASE_FEATURES,
+    HELPERS,
     HORIZON_FEATURES,
     HORIZONS,
     build_features,
@@ -31,7 +32,7 @@ def _panel(weeks=140, seed=0):
     return pd.concat(frames, ignore_index=True)
 
 
-NUMERIC = BASE_FEATURES + HORIZON_FEATURES
+NUMERIC = BASE_FEATURES + HORIZON_FEATURES + HELPERS
 
 
 @pytest.mark.parametrize("h", HORIZONS)

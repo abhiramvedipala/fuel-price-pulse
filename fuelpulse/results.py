@@ -70,6 +70,8 @@ def build() -> str:
         ingest_section(),
         dbt_section(),
         file_section("backtest.md"),
+        file_section("backtest_before.md"),
+        file_section("model_experiments.md"),
         file_section("shap.md"),
     ]
     return "\n".join(p for p in parts if p)

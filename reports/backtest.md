@@ -67,17 +67,17 @@ Model choice: **pooled**. On the 52 origins before the test window, validation M
 | US | 0.1413 | 0.1386 | 0.1625 |
 
 
-### 80% prediction intervals (split conformal)
+### 80% prediction intervals (split conformal, scaled by trailing volatility, 104-week calibration)
 
 | Weeks ahead | Empirical coverage (%) | Mean half-width ($/gal) |
 |---|---|---|
-| 1 | 71.074 | 0.075 |
-| 2 | 68.349 | 0.127 |
-| 3 | 67.067 | 0.176 |
-| 4 | 67.388 | 0.221 |
+| 1 | 79.888 | 0.124 |
+| 2 | 78.446 | 0.199 |
+| 3 | 79.006 | 0.263 |
+| 4 | 79.167 | 0.335 |
 
 
-Overall coverage: 68.5% against a 80% target.
+Overall coverage: 79.1% against a 80% target.
 
 
 Full per-region, per-fuel, per-horizon scores: `reports/backtest_metrics.csv`. Chart: `docs/backtest_mae.png`.

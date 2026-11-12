@@ -49,3 +49,17 @@ def test_score_metrics_by_hand():
     assert s.loc["LightGBM", "rmse"] == pytest.approx(np.sqrt(0.5))
     assert s.loc["LightGBM", "mape"] == pytest.approx(25.0)
     assert s.loc["Seasonal naive", "mae"] == 0
+
+
+def test_interval_width_scales_with_trailing_volatility(designs):
+    origin = pd.Timestamp(sorted(designs[1]["week"].unique())[130])
+    fitted = model.fit_all(designs, origin, "pooled", intervals=True)
+    fc = model.forecast(fitted, designs, origin)
+    one = fc[fc["horizon"] == 2]
+    d = designs[2]
+    vol = d[d["week"] == origin].set_index(["region", "product"])["vol_13w"]
+    expected = fitted.half_width[2] * vol.clip(lower=model.MIN_VOL)
+    got = ((one["hi"] - one["lo"]) / 2).to_numpy()
+    want = [expected[(r, p)] for r, p in zip(one["region"], one["product"], strict=True)]
+    np.testing.assert_allclose(got, want)
+    assert got.max() > got.min()  # different series, different widths
