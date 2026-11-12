@@ -18,14 +18,14 @@ I tested it the way you would use it: each week, forecast using only what was kn
 
 | Weeks ahead | Typical miss | Usual range around the forecast | Verdict |
 |---|---|---|---|
-| 1 | about 7 cents | plus or minus 7.5 cents | Trust it |
-| 2 | about 13 cents | plus or minus 13 cents | Good for planning |
-| 3 | about 18 cents | plus or minus 18 cents | Treat as a rough guide |
-| 4 | about 22 cents | plus or minus 22 cents | Barely better than "no change" |
+| 1 | about 7 cents | plus or minus 12 cents on average | Trust it |
+| 2 | about 13 cents | plus or minus 20 cents on average | Good for planning |
+| 3 | about 18 cents | plus or minus 26 cents on average | Treat as a rough guide |
+| 4 | about 22 cents | plus or minus 34 cents on average | Barely better than "no change" |
 
 - The model beat a simple "same as last week" guess at 1 week (6% smaller misses) and was about even at 2 weeks. At 3 and 4 weeks it was **worse** than assuming prices stay where they are (2% and 5% bigger misses). So past two weeks, "no change" is a fair forecast, and the model's range is what adds value.
 - It was clearly better than a "same as last year" guess at every horizon.
-- The ranges are **too narrow**. They were meant to hold 8 times in 10 but held about 7 times in 10 (68.5%). Treat them as a floor on how wrong the forecast can be.
+- The ranges are meant to hold 8 times in 10 and did (79.1% over the 104 weeks tested). They are wider when prices have been moving a lot and narrower in calm weeks, so the figures above are averages. An earlier version used fixed-width ranges and held only 68.5% of the time, mostly because of the March 2026 shock.
 
 ## Where it failed
 
