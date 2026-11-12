@@ -87,3 +87,31 @@ Deciding what the failures mean. The six worst weeks cluster in March 2026, when
 ### Files to open
 - `fuelpulse/explain.py`, `reports/shap.md`
 - `docs/findings.md`, `docs/shap_summary.png`
+
+## Phase 4: dashboard and schedule
+
+### What this phase built
+- `app/streamlit_app.py`: history, 4-week forecast with its 80% band, model vs baseline error, top drivers and last-refresh time, with graceful fallbacks for missing files.
+- `.github/workflows/ci.yml`: lint, tests and a dbt build on a frozen fixture for every push and pull request.
+- `.github/workflows/weekly.yml`: Monday cron that ingests, runs `dbt build` (fails on any test failure), checks freshness, forecasts, and commits the refreshed outputs.
+- `fuelpulse/forecast.py`, the README, screenshots and the generated RESULTS.md.
+
+### Key decisions and "why not X?"
+- **Why commit forecasts to the repo?** The free hosted dashboard needs fresh data without a database or secrets. A weekly bot commit is the simplest thing that works; with a real budget I would write to object storage.
+- **Why a fixture in CI?** Deterministic and offline. The live path is covered by the weekly job, which fails loudly if EIA data goes stale.
+- **Why Streamlit?** The whole app is Python reading four small files, and it deploys free.
+
+### Hardest problem
+Making the offline fixture pass the same checks as the live data. The first fixture build failed two not-null tests because the first retail week came before the first crude week, which the live data hid. After that, the data-age test needed a switch so a frozen sample can pass, without weakening the test for the weekly run. I also caught a headless-browser screenshot of a loading skeleton and retook it with a longer wait, rather than committing it.
+
+### Likely questions
+1. **How does the weekly job fail loudly?** `dbt build` returns a non-zero exit code on any failed test, which stops the job before the forecast step; source freshness errors after 15 days; and a data-age test fails if the newest EIA week is more than two weeks old.
+2. **How does the dashboard work with no warehouse?** It falls back to a parquet copy of the history and the committed CSVs, all written by `fuelpulse.forecast`.
+3. **What would break if EIA changed its file layout?** The ingest reads the "Data 1" sheet by position; a layout change fails on parsing, and tests on the normaliser catch blank or footer rows. The API path is the fallback.
+4. **How would you scale this?** Move DuckDB to a warehouse, write forecasts to object storage, run the refit as a scheduled job, and track forecast error over time to trigger retraining.
+5. **What would you add first?** Daily RBOB wholesale prices, which lead retail by days, and adaptive conformal intervals because current coverage is 68.5% against an 80% target.
+
+### Files to open
+- `app/streamlit_app.py`, `tests/test_app.py`
+- `.github/workflows/weekly.yml`, `.github/workflows/ci.yml`
+- `fuelpulse/forecast.py`, `scripts/check.sh`
