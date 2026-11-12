@@ -4,10 +4,10 @@
 
 ## What moves prices
 
-1. **Last week's move is the strongest signal.** Pump prices carry momentum: a week that rose tends to be followed by more of the same, and a drop tends to keep going. This was the top driver in all 12 region and fuel combinations.
+1. **Last week's move is the strongest signal.** Pump prices carry momentum: across the weeks tested, a rise was followed by further rises more often than not (correlation +0.41 with the next two weeks' change), and the same held for drops. This was the top driver in all 12 region and fuel combinations.
 2. **Crude oil comes second.** The level of WTI crude and its recent change both matter. One barrel holds 42 gallons, so a $1 move in crude is worth roughly 2.4 cents a gallon at the pump, with a delay. In March 2026 crude went from about $65 to $96 in four weeks, and regular gasoline went from $2.94 to $3.96.
 3. **Time of year is third.** The model finds a clear seasonal pattern in the weeks ahead (the spring and summer rise, the autumn fall).
-4. **Your margin over crude matters less than those three.** The gap between the pump price and crude cost tends to snap back toward normal, but it is a smaller effect.
+4. **Your margin over crude matters less than those three.** The gap between the pump price and crude cost, and how far it sits from its half-year average, ranked well below those three.
 5. **Holiday weeks showed no strong effect.** Memorial Day, July 4th, Labor Day and Thanksgiving weeks did not rank among the main drivers.
 
 The ranking is the same in every region (U.S., East Coast, Midwest, Gulf Coast, Rocky Mountain, West Coast), for both gasoline and diesel.
