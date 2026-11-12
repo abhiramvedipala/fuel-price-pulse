@@ -42,7 +42,7 @@ The offline fixture build failed two not-null tests that the live build passed. 
 - `fuelpulse/forecast.py`: the weekly refit-and-forecast entry point.
 
 ### Key decisions and "why not X?"
-- **Why predict changes?** Trees cannot extrapolate. Prices rose well above the training range in 2026; a level model would have been capped.
+- **Why predict changes?** Trees cannot extrapolate, so a level-based forecast is fragile when the price level shifts. I originally thought 2026 prices left the training range; checking the data showed they did not (U.S. gasoline peaked at $4.50 against a $1.72-$5.01 training range that includes 2022), and replacing level features with 52-week deviations changed validation MAE by about 0.1%. I keep the change target as the more robust design.
 - **Why not tune on the test window?** I picked parameters and pooled-vs-per-series on the 52 origins before it. The test window only scores.
 - **Why conformal intervals?** No extra models and an honest, simple recipe. Why not quantile regression? It needs three models per horizon and I would still have to check coverage afterwards.
 - **Why direct multi-horizon, not recursive?** Recursive forecasting feeds its own predictions back in and compounds errors; direct models each target one horizon.
@@ -75,7 +75,7 @@ Making "no future information" provable rather than claimed. Crude prices are da
 - **Why report that drivers are identical across regions?** Because they are. Regional differences exist in level, not in which signals matter, and inventing differences would mislead.
 
 ### Hardest problem
-Deciding what the failures mean. The six worst weeks cluster in March 2026, when gasoline rose about $1.30 in four weeks and the model forecast almost none of it. Crude had also jumped, but a model trained mostly on moderate moves cannot extrapolate a regime like that. I wrote that down as a limitation instead of tuning the model on those weeks, which would have leaked the test window into training.
+Deciding what the failures mean. The six worst weeks cluster in March 2026, when gasoline rose about $1.30 in four weeks and the model forecast almost none of it. Crude had also jumped, but a weekly model has no way to see a supply shock coming; the 2022 spike is in the training data, but it is one episode. I wrote that down as a limitation instead of tuning the model on those weeks, which would have leaked the test window into training.
 
 ### Likely questions
 1. **What drives prices in your model?** Last week's price change (mean |SHAP| 0.032 $/gal), the WTI level (0.016), then seasonality (0.015). The same ranking holds in all 12 series.

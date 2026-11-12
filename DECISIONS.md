@@ -26,7 +26,7 @@ Short log of choices made during the build, newest phase last. Each entry: what,
 ## Phase 2: forecasting and backtest
 
 10. **The model predicts the price change, not the price.**
-    Trees cannot extrapolate beyond levels seen in training, and prices moved from about $3.1 to $4.2 in 2026. Predicting the h-week change and adding it to the origin price avoids that. Rejected: predicting levels, which would cap forecasts at the training range.
+    Trees cannot extrapolate beyond levels seen in training, so forecasts tied to a level are fragile when the level shifts. Predicting the h-week change and adding it to the origin price avoids that. Correction: an earlier version of this note said 2026 prices went above the training range. They did not: U.S. gasoline peaked at $4.50 in 2026 against a 2015-2024 training range of $1.72 to $5.01 (the 2022 spike is in the training data). The change target is kept because it is the more robust design, not because a cap was hit.
 11. **One pooled model per horizon, not one per series.**
     I compared pooled (region and fuel as categoricals) with 12 separate models per horizon on the 52 origins before the test window: validation MAE 0.0819 vs 0.0827. Pooled won narrowly and has far more rows per model, so it is the default. The choice is recomputed on every backtest and saved in `reports/model_choice.json`.
 12. **L1 objective and small trees.**

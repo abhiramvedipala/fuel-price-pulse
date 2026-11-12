@@ -75,7 +75,7 @@ The model beats seasonal naive at every horizon and last value at 1 and 2 weeks,
 ## How it works
 **Point-in-time crude join.** EIA dates crude weeks on Friday and retail weeks on Monday. A dbt ASOF join gives each Monday the newest crude week that had already ended, so no feature sees a future price.
 
-**Predicting changes.** Each horizon has its own LightGBM model predicting the price change from the origin week, which I add back to the origin price. Trees cannot extrapolate beyond the levels they saw, and 2026 prices went well above the training range.
+**Predicting changes.** Each horizon has its own LightGBM model predicting the price change from the origin week, which I add back to the origin price. Trees cannot extrapolate beyond the levels they saw, so tying a forecast to a price level is fragile when the level shifts. Predicting the change avoids that. In practice 2026 stayed inside the training range (U.S. gasoline peaked at $4.50 in 2026 against a 2015-2024 training range of $1.72 to $5.01, which includes the 2022 spike), so I did not need it to avoid a cap; a validation test of level-free features changed MAE by about 0.1%.
 
 **Rolling-origin backtest.** For each of 104 weekly origins the model trains only on rows whose targets were already published, forecasts 1-4 weeks ahead and is scored once the truth arrives, refit every 4 weeks. Model choice (pooled vs per-series) and hyperparameters were picked on the 52 origins before that window.
 
