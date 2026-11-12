@@ -22,3 +22,20 @@ Short log of choices made during the build, newest phase last. Each entry: what,
    dbt source freshness watches `loaded_at`; the `max_age_days` test watches the newest EIA week. Only the second catches "the job ran but EIA published nothing new".
 9. **Working notes stay out of git.**
    The build brief and local tooling config are gitignored; the repo holds only the project.
+
+## Phase 2: forecasting and backtest
+
+10. **The model predicts the price change, not the price.**
+    Trees cannot extrapolate beyond levels seen in training, and prices moved from about $3.1 to $4.2 in 2026. Predicting the h-week change and adding it to the origin price avoids that. Rejected: predicting levels, which would cap forecasts at the training range.
+11. **One pooled model per horizon, not one per series.**
+    I compared pooled (region and fuel as categoricals) with 12 separate models per horizon on the 52 origins before the test window: validation MAE 0.0819 vs 0.0827. Pooled won narrowly and has far more rows per model, so it is the default. The choice is recomputed on every backtest and saved in `reports/model_choice.json`.
+12. **L1 objective and small trees.**
+    I tried six settings on the validation year only. The test window was never used to choose. L1 with 7 leaves and `min_child_samples=100` had the lowest validation MAE (mean 0.0822 vs 0.0906 for the first L2 attempt). Weekly changes have fat tails, and L1 keeps a few shock weeks from dominating. This was a hand-picked comparison of six variants, not a search.
+13. **Seasonal naive = last value plus last year's change.**
+    A raw "same week last year" price is a poor baseline when the level moves a lot year to year. Adding the change over the same h weeks a year earlier to today's price keeps the seasonal shape and the current level.
+14. **Intervals use split conformal, not quantile LightGBM.**
+    The 80% half-width is the 80th percentile of absolute errors on the most recent 52 weeks, from a model that never saw those weeks. It needs no extra models and has a finite-sample guarantee under exchangeability. That assumption fails here: coverage was 68-71% against 80%, because errors are larger in shock periods than in the calibration window. I report the real coverage and do not widen the intervals to hit the target.
+15. **Weekly backtest refit every 4 weeks.**
+    Refitting 104 times x 4 horizons is slow on a shared 16 GB machine. Every 4 weeks keeps the model within a month of fresh data and costs a quarter of the time.
+16. **The result is reported as it came out.**
+    The model beats seasonal naive at every horizon and last value at 1-2 weeks, but is 2-5% worse than last value at 3-4 weeks. A last-value forecast is hard to beat on a series with a large random-walk component. The README says so.

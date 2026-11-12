@@ -31,3 +31,33 @@ The offline fixture build failed two not-null tests that the live build passed. 
 - `dbt/tests/` (singular and generic tests)
 - `tests/test_ingest.py`
 - `scripts/check.sh`
+
+## Phase 2: forecasting and backtest
+
+### What this phase built
+- `fuelpulse/features.py`: lags, rolling-mean deviations, crude changes, retail margin over crude, week-of-year and holiday flags (Memorial Day, July 4th, Labor Day, Thanksgiving).
+- `fuelpulse/model.py`: two baselines (last value, seasonal naive) and a direct multi-horizon LightGBM (one model per horizon, 1-4 weeks) with split-conformal 80% intervals.
+- `fuelpulse/backtest.py`: rolling-origin evaluation over the last 104 weeks, scored on MAE, RMSE and MAPE per horizon and region.
+- Leakage tests that remove or inflate future weeks and require every feature to be unchanged.
+- `fuelpulse/forecast.py`: the weekly refit-and-forecast entry point.
+
+### Key decisions and "why not X?"
+- **Why predict changes?** Trees cannot extrapolate. Prices rose well above the training range in 2026; a level model would have been capped.
+- **Why not tune on the test window?** I picked parameters and pooled-vs-per-series on the 52 origins before it. The test window only scores.
+- **Why conformal intervals?** No extra models and an honest, simple recipe. Why not quantile regression? It needs three models per horizon and I would still have to check coverage afterwards.
+- **Why direct multi-horizon, not recursive?** Recursive forecasting feeds its own predictions back in and compounds errors; direct models each target one horizon.
+
+### Hardest problem
+Making "no future information" provable rather than claimed. Crude prices are dated on Fridays and retail on Mondays, so a naive join leaks. The dbt panel uses a point-in-time join, and `tests/test_features.py` rebuilds features from a truncated panel and from one with future prices tripled, and asserts every earlier feature is identical for all four horizons. Separately, the training rows at an origin must have targets already published, which a model test checks.
+
+### Likely questions
+1. **Did your model beat the baselines?** Against seasonal naive, yes at every horizon (about 10-19% lower MAE). Against last value it wins at 1 week (+6.4%) and 2 weeks (+0.9%), and loses at 3 and 4 weeks (-2.3% and -5.3%). I report that as is; retail prices are close to a random walk over a month.
+2. **Why are your intervals under-covered?** Coverage is 68-71% against an 80% target. The calibration window is the last 52 weeks, and the test period contains shocks bigger than anything in it, so errors grow after calibration. Fixes I would try: a longer window, adaptive conformal updates, or scaling by recent volatility.
+3. **How do you prevent leakage?** Three layers: the point-in-time crude join in dbt, features computed only from past rows, and tests that perturb the future and check earlier features do not move. Training sets also exclude rows whose target is not yet published at the origin.
+4. **Why a rolling-origin backtest?** A single split hides regime changes. Rolling origins reproduce what the weekly job does: train on what is known, forecast, score once the truth arrives.
+5. **Why LightGBM for 6k rows per horizon?** It handles the categoricals and interactions with little tuning, and it supports exact SHAP. I kept it small (200 trees, 7 leaves) and compared it with simple baselines so the gain is measured, not assumed.
+
+### Files to open
+- `fuelpulse/features.py`, `tests/test_features.py` (leakage)
+- `fuelpulse/model.py` (baselines, conformal)
+- `fuelpulse/backtest.py`, `reports/backtest.md`

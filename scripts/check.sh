@@ -19,4 +19,13 @@ echo "== ruff ==";   uv run ruff check .
 echo "== pytest =="; uv run pytest -q
 echo "== ingest =="; uv run python -m fuelpulse.ingest ${INGEST_ARGS[@]+"${INGEST_ARGS[@]}"}
 echo "== dbt build =="; uv run dbt build "${DBT_ARGS[@]}"
+echo "== forecast smoke =="
+SMOKE="$(mktemp -d)"
+uv run python -m fuelpulse.forecast --db "${FUELPULSE_DB:-data/warehouse.duckdb}" --reports "$SMOKE" > /dev/null
+test -s "$SMOKE/forecast.csv"
+if [[ -z "${FUELPULSE_DB:-}" ]]; then
+  echo "== backtest smoke (8 origins; full run: python -m fuelpulse.backtest) =="
+  uv run python -m fuelpulse.backtest --weeks 8 --val-weeks 8 --refit-every 8 \
+    --out "$SMOKE" --chart "$SMOKE/mae.png" > /dev/null
+fi
 echo "check.sh: all green"
