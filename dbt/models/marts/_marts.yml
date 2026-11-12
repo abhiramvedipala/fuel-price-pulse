@@ -1,0 +1,39 @@
+version: 2
+
+models:
+  - name: mart_price_history
+    description: Price history per region and fuel for the dashboard
+    columns:
+      - name: panel_id
+        tests: [unique, not_null]
+      - name: region
+        tests:
+          - accepted_values:
+              arguments: {values: [US, PADD1, PADD2, PADD3, PADD4, PADD5]}
+      - name: week
+        tests:
+          - not_null
+          - max_age_days: {arguments: {days: "{{ var('max_staleness_days') }}"}}
+      - name: price
+        tests:
+          - not_null
+          - price_in_range: {arguments: {min_value: 1, max_value: 10}}
+      - name: spread_over_wti
+        tests: [not_null]
+  - name: mart_model_input
+    description: Clean weekly panel consumed by the forecasting code
+    columns:
+      - name: panel_id
+        tests: [unique, not_null]
+      - name: week
+        tests:
+          - not_null
+          - max_age_days: {arguments: {days: "{{ var('max_staleness_days') }}"}}
+      - name: price
+        tests:
+          - not_null
+          - price_in_range: {arguments: {min_value: 1, max_value: 10}}
+      - name: wti
+        tests: [not_null]
+      - name: brent
+        tests: [not_null]

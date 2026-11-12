@@ -1,0 +1,30 @@
+version: 2
+
+models:
+  - name: stg_retail_prices
+    columns:
+      - name: region
+        tests:
+          - not_null
+          - accepted_values:
+              arguments: {values: [US, PADD1, PADD2, PADD3, PADD4, PADD5]}
+      - name: product
+        tests:
+          - accepted_values:
+              arguments: {values: [gasoline, diesel]}
+      - name: week
+        tests: [not_null]
+      - name: price
+        tests:
+          - not_null
+          - price_in_range: {arguments: {min_value: 1, max_value: 10}}
+  - name: stg_crude_prices
+    columns:
+      - name: crude_week
+        tests: [unique, not_null]
+      - name: wti
+        tests:
+          - price_in_range: {arguments: {min_value: 0, max_value: 250}}
+      - name: brent
+        tests:
+          - price_in_range: {arguments: {min_value: 0, max_value: 250}}

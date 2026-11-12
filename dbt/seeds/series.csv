@@ -1,0 +1,15 @@
+series_id,region,product,unit
+EMM_EPMR_PTE_NUS_DPG,US,gasoline,usd_per_gal
+EMD_EPD2D_PTE_NUS_DPG,US,diesel,usd_per_gal
+EMM_EPMR_PTE_R10_DPG,PADD1,gasoline,usd_per_gal
+EMD_EPD2D_PTE_R10_DPG,PADD1,diesel,usd_per_gal
+EMM_EPMR_PTE_R20_DPG,PADD2,gasoline,usd_per_gal
+EMD_EPD2D_PTE_R20_DPG,PADD2,diesel,usd_per_gal
+EMM_EPMR_PTE_R30_DPG,PADD3,gasoline,usd_per_gal
+EMD_EPD2D_PTE_R30_DPG,PADD3,diesel,usd_per_gal
+EMM_EPMR_PTE_R40_DPG,PADD4,gasoline,usd_per_gal
+EMD_EPD2D_PTE_R40_DPG,PADD4,diesel,usd_per_gal
+EMM_EPMR_PTE_R50_DPG,PADD5,gasoline,usd_per_gal
+EMD_EPD2D_PTE_R50_DPG,PADD5,diesel,usd_per_gal
+RWTC,GLOBAL,wti,usd_per_bbl
+RBRTE,GLOBAL,brent,usd_per_bbl

@@ -1,0 +1,12 @@
+version: 2
+
+seeds:
+  - name: series
+    description: EIA series id to region, product and unit
+    columns:
+      - name: series_id
+        tests: [unique, not_null]
+      - name: unit
+        tests:
+          - accepted_values:
+              arguments: {values: [usd_per_gal, usd_per_bbl]}

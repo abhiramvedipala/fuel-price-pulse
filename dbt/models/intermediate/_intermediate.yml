@@ -1,0 +1,16 @@
+version: 2
+
+models:
+  - name: int_weekly_panel
+    description: Region x product x week retail price with point-in-time crude
+    columns:
+      - name: panel_id
+        tests: [unique, not_null]
+      - name: price
+        tests:
+          - not_null
+          - price_in_range: {arguments: {min_value: 1, max_value: 10}}
+      - name: wti
+        tests: [not_null]
+      - name: brent
+        tests: [not_null]
