@@ -8,7 +8,9 @@ A weekly pipeline that forecasts U.S. retail gasoline and diesel prices four wee
 I work at a gas station, and the question that comes up every week is where prices are heading over the next month. The government publishes the data, but nobody hands a station owner a forecast with an honest error bar and a plain statement of when to ignore it. This project does that for the U.S. average and the five PADD regions (Florida sits in PADD 1), for regular gasoline and diesel. The one-page owner's summary is [docs/findings.md](docs/findings.md).
 
 ## Demo
-![Dashboard](docs/dashboard-us-gasoline.png)
+![Dashboard, U.S. gasoline](docs/dashboard-us-gasoline.png)
+
+![Dashboard, West Coast diesel](docs/dashboard-padd5-diesel.png)
 
 Backtest error by horizon, and what moves the 4-week forecast:
 
