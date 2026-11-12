@@ -48,3 +48,16 @@ Short log of choices made during the build, newest phase last. Each entry: what,
     The worst 4-week misses are listed straight from `reports/backtest_predictions.csv`, so they are the same out-of-sample forecasts scored in the backtest.
 19. **Findings page only states what a script measured.**
     A claim I could not back (margin snap-back) was removed; the momentum claim cites its measured correlation. Rule of thumb of 2.4 cents per $1 crude is arithmetic (42 gallons per barrel), not a model result.
+
+## Phase 4: dashboard and schedule
+
+20. **The dashboard reads committed files, with the warehouse as a bonus.**
+    Streamlit Cloud has no DuckDB file, so the app prefers `data/warehouse.duckdb` when present and otherwise reads `reports/history.parquet` and the CSVs the weekly job commits. One code path works locally and hosted. Rejected: committing the warehouse (binary, grows every week).
+21. **The weekly job commits data back to the repo.**
+    It is the simplest way to give the free hosted dashboard fresh numbers with no database or secrets. The cost is a weekly data commit by a bot identity; history stays readable because the commit message names the EIA week.
+22. **CI uses a frozen fixture, the weekly job uses live data.**
+    CI must be deterministic and offline, so it runs `check.sh --fixture` and relaxes the data-age test that a frozen sample cannot satisfy. The weekly job is the one that exercises the live files and fails on stale data.
+23. **Full backtest stays out of CI.**
+    It takes about five minutes with 2 worker threads. `check.sh` runs an 8-origin smoke backtest on live data instead, so the script is exercised on every check; the full run is one documented command.
+24. **No local remote yet.**
+    Creating the GitHub repository was blocked by a permission prompt, so phases were merged locally with merge commits (`--no-ff`) on the same branch-per-phase layout, ready to push. Workflows have therefore not run on GitHub.
