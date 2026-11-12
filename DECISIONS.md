@@ -39,3 +39,12 @@ Short log of choices made during the build, newest phase last. Each entry: what,
     Refitting 104 times x 4 horizons is slow on a shared 16 GB machine. Every 4 weeks keeps the model within a month of fresh data and costs a quarter of the time.
 16. **The result is reported as it came out.**
     The model beats seasonal naive at every horizon and last value at 1-2 weeks, but is 2-5% worse than last value at 3-4 weeks. A last-value forecast is hard to beat on a series with a large random-walk component. The README says so.
+
+## Phase 3: explanations and findings
+
+17. **SHAP on the pooled models as of the latest week.**
+    TreeExplainer is exact for trees and fast here. I explain the last 104 weeks and average |SHAP| over the four horizons so the table does not depend on one horizon. Per-region drivers come from grouping the pooled model's SHAP values; the top three are identical in all 12 series, which I report as is rather than forcing differences.
+18. **Failure weeks come from the backtest, not from SHAP.**
+    The worst 4-week misses are listed straight from `reports/backtest_predictions.csv`, so they are the same out-of-sample forecasts scored in the backtest.
+19. **Findings page only states what a script measured.**
+    A claim I could not back (margin snap-back) was removed; the momentum claim cites its measured correlation. Rule of thumb of 2.4 cents per $1 crude is arithmetic (42 gallons per barrel), not a model result.
