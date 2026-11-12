@@ -33,7 +33,7 @@ flowchart LR
     K[GitHub Actions<br/>Mondays] -.runs.-> A
     K -.commits.-> H
 ```
-Every Monday the workflow loads the latest EIA weeks into DuckDB, builds three dbt layers and fails the run if any test fails, then refits the model on everything published so far and writes a four-week forecast with 80% intervals. The refreshed CSV, a parquet copy of the history and a run log are committed back to the repo, which is all the dashboard needs to run on a host with no warehouse.
+Every Monday evening (with a Tuesday retry for late releases) the workflow loads the latest EIA weeks into DuckDB, fails with a plain message if the newest week is more than 9 days old, builds three dbt layers and fails the run if any test fails, then refits the model on everything published so far and writes a four-week forecast with 80% intervals. The refreshed CSV, a parquet copy of the history and a run log are committed back to the repo, which is all the dashboard needs to run on a host with no warehouse.
 
 ## Tech stack
 | Tool | Used for | Why I chose it |
@@ -88,10 +88,10 @@ The model beats seasonal naive at every horizon and last value at 1 and 2 weeks,
 
 ## Testing
 ```bash
-uv run pytest -q          # 22 tests
+uv run pytest -q          # 27 tests
 uv run dbt build --project-dir dbt --profiles-dir dbt   # 40 data tests plus a seed and 5 models
 ```
-pytest covers idempotent upserts and revisions, the `--since` watermark, leakage (features unchanged when later weeks are removed or inflated, all four horizons), the training cut-off, baseline definitions, interval symmetry, hand-checked MAE/RMSE/MAPE, holiday dates, and dashboard smoke runs. dbt tests cover uniqueness, not-null, accepted values, a $1-$10 per gallon range, contiguous weeks, crude never from the future, and data age.
+pytest covers idempotent upserts and revisions, the weekly freshness check (fresh, late, missed and stalled-crude cases), volatility-scaled interval widths, the `--since` watermark, leakage (features unchanged when later weeks are removed or inflated, all four horizons), the training cut-off, baseline definitions, interval symmetry, hand-checked MAE/RMSE/MAPE, holiday dates, and dashboard smoke runs. dbt tests cover uniqueness, not-null, accepted values, a $1-$10 per gallon range, contiguous weeks, crude never from the future, and data age.
 
 ## Design decisions and trade-offs
 All 19 are in [DECISIONS.md](DECISIONS.md). The top three:
