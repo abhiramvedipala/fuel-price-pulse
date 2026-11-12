@@ -115,7 +115,7 @@ def report(preds: pd.DataFrame, by_h: pd.DataFrame, by_region: pd.DataFrame, val
         ).loc[list(METHODS.values())].rename_axis("Method"), "{:.4f}"),
         "\n### MAE by region, all horizons ($/gal)\n",
         md_table(pivot(by_region, "region", "mae").rename_axis("Region"), "{:.4f}"),
-        f"\n### {COVERAGE:.0%} prediction intervals (split conformal)\n",
+        f"\n### {COVERAGE:.0%} prediction intervals (split conformal, scaled by trailing volatility, 104-week calibration)\n",
         md_table(pd.DataFrame({"Empirical coverage (%)": cov, "Mean half-width ($/gal)": width}
                               ).rename_axis("Weeks ahead"), "{:.3f}"),
         f"\nOverall coverage: {covered['hit'].mean() * 100:.1f}% against a {COVERAGE:.0%} "
