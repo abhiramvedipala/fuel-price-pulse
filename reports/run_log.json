@@ -1,9 +1,9 @@
 {
-  "started_at": "2026-11-17T04:16:17+00:00",
-  "finished_at": "2026-11-17T04:16:19+00:00",
-  "latest_eia_week": "2026-11-09",
+  "started_at": "2026-11-17T22:04:56+00:00",
+  "finished_at": "2026-11-17T22:04:58+00:00",
+  "latest_eia_week": "2026-11-16",
   "mode": "pooled",
   "series": 12,
   "forecasts": 48,
-  "us_gasoline_4w": 3.786
+  "us_gasoline_4w": 3.542
 }
